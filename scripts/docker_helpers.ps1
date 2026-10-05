@@ -26,7 +26,8 @@ function Start-Services {
     Write-Status "Services started successfully!"
     Write-Status "Kafka UI: http://localhost:8080"
     Write-Status "PostgreSQL: localhost:5432"
-    Write-Status "Kafka: localhost:9092"
+    Write-Status "Kafka from host apps: localhost:29092"
+    Write-Status "Kafka inside Docker network: kafka:9092"
 }
 
 # Stop all services

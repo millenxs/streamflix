@@ -4,16 +4,16 @@ This document documents the key technology choices made for the StreamFlix proje
 
 ---
 
-## 🐍 Python 3.12+
+## 🐍 Python 3.11–3.12
 
 ### Decision
-Use Python 3.12+ as the primary programming language.
+Use Python 3.11 or 3.12 as the primary programming language.
 
 ### Rationale
 - **Rich ecosystem**: Unmatched libraries for data science (pandas, numpy, scikit-learn)
 - **Industry standard**: Widely used in data engineering, ML, and backend development
-- **Type hints**: Python 3.12 has mature type hinting support for better code quality
-- **Performance**: Improvements in 3.12 for faster execution
+- **Type hints**: Python 3.11+ has mature type hinting support for better code quality
+- **Dependency compatibility**: Python 3.11–3.12 aligns with the current PyArrow and data-science dependency pins
 - **Developer experience**: Large community, excellent documentation
 
 ### Trade-offs
@@ -27,25 +27,25 @@ Use Python 3.12+ as the primary programming language.
 
 ---
 
-## 📦 Poetry for Dependency Management
+## 📦 pip + pyproject.toml for Dependency Management
 
 ### Decision
-Use Poetry instead of pip for Python dependency management.
+Use `pip` with `requirements.txt`, `requirements-dev.txt`, and a standards-based `pyproject.toml`.
 
 ### Rationale
-- **Lock file**: Ensures reproducible builds across environments
-- **Virtual environment management**: Built-in, no need for separate venv management
-- **Dependency groups**: Separate dev and prod dependencies
-- **Pyproject.toml**: Standard format, future-proof
-- **Professional**: Used in production environments
+- **Simple local setup**: Recruiters and reviewers can run the project with standard Python tooling.
+- **Low onboarding friction**: No Poetry installation is required before the first run.
+- **Separation of dependencies**: Runtime dependencies live in `requirements.txt`; development and notebook tooling live in `requirements-dev.txt`.
+- **Modern project metadata**: `pyproject.toml` still centralizes package metadata and tool configuration for Black, Ruff, Mypy, and Pytest.
+- **Portfolio-friendly**: The setup is transparent and easy to reproduce in CI or Docker later.
 
 ### Trade-offs
-- **Learning curve**: Slightly more complex than pip
-- **Slower**: Initial setup is slower than pip
+- **No committed lock file yet**: Fully reproducible dependency locking can be added later with `pip-tools` if needed.
+- **Manual virtual environment management**: Contributors must create and activate a `.venv` themselves.
 
 ### Alternatives Considered
-- **pip + requirements.txt**: Simpler, but no lock file guarantee
-- **Conda**: Good for data science, but heavier and slower
+- **Poetry**: More complete dependency management, but adds an extra tool and was intentionally removed to simplify setup.
+- **Conda**: Good for data science, but heavier and less aligned with Docker-based deployment.
 
 ---
 
@@ -74,10 +74,10 @@ Use PostgreSQL 16 as the primary database.
 
 ---
 
-## 🚀 Apache Kafka 3.7
+## 🚀 Apache Kafka-compatible broker via Confluent Platform 7.5.0
 
 ### Decision
-Use Apache Kafka for event streaming.
+Use a Kafka-compatible broker from Confluent Platform for local event streaming.
 
 ### Rationale
 - **Industry standard**: Used by Netflix, Uber, LinkedIn, etc.
@@ -341,7 +341,7 @@ All technology choices prioritize:
 1. **Industry relevance**: Technologies used in real companies
 2. **Learning value**: Marketable skills for portfolio
 3. **Simplicity**: Avoid overengineering for portfolio project
-4. **Reproducibility**: Docker, Poetry, lock files
+4. **Reproducibility**: Docker, virtual environments, requirements files
 5. **Performance**: Sufficient for project scale
 6. **Future-proof**: Technologies with active communities
 

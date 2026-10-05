@@ -223,10 +223,10 @@ StreamFlix is designed as a modular, scalable data platform that simulates a rea
 
 ## 🔧 Technology Choices
 
-### Python 3.12+
+### Python 3.11–3.12
 - Rich ecosystem for data science
 - Type hints for code quality
-- Performance improvements
+- Compatible with current PyArrow and data-science dependency pins
 
 ### PostgreSQL 16
 - ACID compliance
@@ -234,11 +234,11 @@ StreamFlix is designed as a modular, scalable data platform that simulates a rea
 - JSONB support for flexible metadata
 - Mature and reliable
 
-### Apache Kafka 3.7
-- Industry standard for streaming
-- Scalable and fault-tolerant
+### Apache Kafka-compatible broker via Confluent Platform 7.5.0
+- Industry-standard streaming API
+- Scalable and fault-tolerant event log pattern
 - Supports complex event patterns
-- Good Windows support via WSL2
+- Good Windows support via Docker Desktop + WSL2
 
 ### Scikit-learn
 - Comprehensive ML library

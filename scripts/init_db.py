@@ -168,6 +168,7 @@ class DatabaseInitializer:
             "03_facts.sql",
             "04_indexes.sql",
             "05_populate_dim_date.sql",
+            "06_simulation.sql",
         ]
 
         print("\nExecuting SQL schema scripts...")
@@ -209,6 +210,7 @@ class DatabaseInitializer:
             "fact_user_interactions",
             "fact_recommendations",
             "fact_recommendation_feedback",
+            "sim_user_profiles",
         ]
 
         with self.connection.cursor() as cursor:

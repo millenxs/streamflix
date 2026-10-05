@@ -1,0 +1,299 @@
+// =============================================================================
+// StreamFlix Power BI DAX Measures
+// =============================================================================
+
+// =============================================================================
+// USER ENGAGEMENT KPIs
+// =============================================================================
+
+// DAU (Daily Active Users)
+DAU = 
+CALCULATE(
+    DISTINCTCOUNT(fact_watch_events[user_id]),
+    fact_watch_events[event_type] IN {"play", "content_click", "search"},
+    TREATAS({TODAY()}, dim_date[date_id])
+)
+
+// WAU (Weekly Active Users)
+WAU = 
+CALCULATE(
+    DISTINCTCOUNT(fact_watch_events[user_id]),
+    fact_watch_events[event_type] IN {"play", "content_click", "search"},
+    DATESINPERIOD(dim_date[date_id], TODAY(), -7, DAY)
+)
+
+// MAU (Monthly Active Users)
+MAU = 
+CALCULATE(
+    DISTINCTCOUNT(fact_watch_events[user_id]),
+    fact_watch_events[event_type] IN {"play", "content_click", "search"},
+    DATESINPERIOD(dim_date[date_id], TODAY(), -30, DAY)
+)
+
+// MAU Trend (for line chart)
+MAU Trend = 
+CALCULATE(
+    DISTINCTCOUNT(fact_watch_events[user_id]),
+    fact_watch_events[event_type] IN {"play", "content_click", "search"},
+    DATESINPERIOD(dim_date[date_id], MAX(dim_date[date_id]), -30, DAY)
+)
+
+// =============================================================================
+// CONTENT CONSUMPTION KPIs
+// =============================================================================
+
+// Watch Time (Hours)
+Watch Time Hours = 
+DIVIDE(
+    SUM(fact_watch_events[watch_seconds]),
+    3600,
+    0
+)
+
+// Watch Time (for trend)
+Watch Time Trend = 
+CALCULATE(
+    [Watch Time Hours],
+    DATESINPERIOD(dim_date[date_id], MAX(dim_date[date_id]), -30, DAY)
+)
+
+// Average Session Duration (Minutes)
+Avg Session Duration Minutes = 
+DIVIDE(
+    AVERAGE(fact_sessions[duration_seconds]),
+    60,
+    0
+)
+
+// Completion Rate
+Completion Rate = 
+DIVIDE(
+    COUNTROWS(FILTER(fact_watch_events, fact_watch_events[completed] = TRUE)),
+    COUNTROWS(fact_watch_events),
+    0
+) * 100
+
+// Completion Rate (for trend)
+Completion Rate Trend = 
+CALCULATE(
+    [Completion Rate],
+    DATESINPERIOD(dim_date[date_id], MAX(dim_date[date_id]), -30, DAY)
+)
+
+// Abandonment Rate
+Abandonment Rate = 
+DIVIDE(
+    COUNTROWS(FILTER(fact_watch_events, fact_watch_events[completed] = FALSE)),
+    COUNTROWS(fact_watch_events),
+    0
+) * 100
+
+// =============================================================================
+// INTERACTION KPIs
+// =============================================================================
+
+// CTR (Click-Through Rate)
+CTR = 
+VAR Clicks = 
+    COUNTROWS(FILTER(fact_watch_events, fact_watch_events[event_type] = "content_click"))
+VAR Impressions = 
+    COUNTROWS(FILTER(fact_watch_events, fact_watch_events[event_type] = "content_impression"))
+RETURN
+    DIVIDE(Clicks, Impressions, 0) * 100
+
+// Recommendation CTR
+Recommendation CTR = 
+VAR Clicks = 
+    COUNTROWS(FILTER(fact_recommendation_feedback, fact_recommendation_feedback[feedback_type] = "click"))
+VAR Impressions = 
+    COUNTROWS(FILTER(fact_recommendation_feedback, fact_recommendation_feedback[feedback_type] = "impression"))
+RETURN
+    DIVIDE(Clicks, Impressions, 0) * 100
+
+// Recommendation CTR (for trend)
+Recommendation CTR Trend = 
+CALCULATE(
+    [Recommendation CTR],
+    DATESINPERIOD(dim_date[date_id], MAX(dim_date[date_id]), -30, DAY)
+)
+
+// =============================================================================
+// RETENTION & CHURN KPIs
+// =============================================================================
+
+// Retention Rate (7-day)
+Retention 7d = 
+VAR CohortUsers = 
+    DISTINCTCOUNT(dim_users[user_id])
+VAR RetainedUsers = 
+    CALCULATE(
+        DISTINCTCOUNT(fact_watch_events[user_id]),
+        DATESINPERIOD(dim_date[date_id], TODAY(), -7, DAY)
+    )
+RETURN
+    DIVIDE(RetainedUsers, CohortUsers, 0) * 100
+
+// Retention Rate (30-day)
+Retention 30d = 
+VAR CohortUsers = 
+    DISTINCTCOUNT(dim_users[user_id])
+VAR RetainedUsers = 
+    CALCULATE(
+        DISTINCTCOUNT(fact_watch_events[user_id]),
+        DATESINPERIOD(dim_date[date_id], TODAY(), -30, DAY)
+    )
+RETURN
+    DIVIDE(RetainedUsers, CohortUsers, 0) * 100
+
+// Churn Rate
+Churn Rate = 
+VAR TotalUsers = 
+    COUNTROWS(DISTINCT(dim_users[user_id]))
+VAR ChurnedUsers = 
+    COUNTROWS(
+        FILTER(
+            SUMMARIZE(
+                fact_watch_events,
+                fact_watch_events[user_id],
+                "LastActivity", MAX(fact_watch_events[date_id])
+            ),
+            [LastActivity] < TODAY() - 30
+        )
+    )
+RETURN
+    DIVIDE(ChurnedUsers, TotalUsers, 0) * 100
+
+// Churn Rate (for trend)
+Churn Rate Trend = 
+CALCULATE(
+    [Churn Rate],
+    DATESINPERIOD(dim_date[date_id], MAX(dim_date[date_id]), -30, DAY)
+)
+
+// Engagement Rate
+Engagement Rate = 
+VAR TotalUsers = 
+    COUNTROWS(DISTINCT(dim_users[user_id]))
+VAR ActiveUsers = 
+    CALCULATE(
+        DISTINCTCOUNT(fact_watch_events[user_id]),
+        DATESINPERIOD(dim_date[date_id], TODAY(), -30, DAY)
+    )
+RETURN
+    DIVIDE(ActiveUsers, TotalUsers, 0) * 100
+
+// =============================================================================
+// RECOMMENDATION KPIs
+// =============================================================================
+
+// Recommendation Conversion Rate
+Recommendation Conversion Rate = 
+VAR Plays = 
+    COUNTROWS(FILTER(fact_recommendation_feedback, fact_recommendation_feedback[feedback_type] = "play"))
+VAR Clicks = 
+    COUNTROWS(FILTER(fact_recommendation_feedback, fact_recommendation_feedback[feedback_type] = "click"))
+RETURN
+    DIVIDE(Plays, Clicks, 0) * 100
+
+// Recommendation Completion Rate
+Recommendation Completion Rate = 
+VAR Completes = 
+    COUNTROWS(FILTER(fact_recommendation_feedback, fact_recommendation_feedback[feedback_type] = "complete"))
+VAR Plays = 
+    COUNTROWS(FILTER(fact_recommendation_feedback, fact_recommendation_feedback[feedback_type] = "play"))
+RETURN
+    DIVIDE(Completes, Plays, 0) * 100
+
+// =============================================================================
+// CONTENT ANALYTICS
+// =============================================================================
+
+// Watch Time by Content
+Watch Time by Content = 
+SUM(fact_watch_events[watch_seconds]) / 3600
+
+// Completion Rate by Content
+Completion Rate by Content = 
+DIVIDE(
+    COUNTROWS(FILTER(fact_watch_events, fact_watch_events[completed] = TRUE)),
+    COUNTROWS(fact_watch_events),
+    0
+) * 100
+
+// =============================================================================
+// USER BEHAVIOR
+// =============================================================================
+
+// Sessions per User
+Sessions per User = 
+DIVIDE(
+    COUNTROWS(fact_sessions),
+    DISTINCTCOUNT(fact_sessions[user_id]),
+    0
+)
+
+// Avg Events per Session
+Avg Events per Session = 
+DIVIDE(
+    SUM(fact_sessions[events_count]),
+    COUNTROWS(fact_sessions),
+    0
+)
+
+// =============================================================================
+// TASTE CLUSTERS
+// =============================================================================
+
+// Cluster Size
+Cluster Size = 
+DISTINCTCOUNT(dim_users[user_id])
+
+// Watch Time by Cluster
+Watch Time by Cluster = 
+SUM(fact_watch_events[watch_seconds]) / 3600
+
+// Completion Rate by Cluster
+Completion Rate by Cluster = 
+DIVIDE(
+    COUNTROWS(FILTER(fact_watch_events, fact_watch_events[completed] = TRUE)),
+    COUNTROWS(fact_watch_events),
+    0
+) * 100
+
+// Churn Rate by Cluster
+Churn Rate by Cluster = 
+VAR TotalUsers = 
+    DISTINCTCOUNT(dim_users[user_id])
+VAR ChurnedUsers = 
+    COUNTROWS(
+        FILTER(
+            dim_users,
+            dim_users[churn_probability] >= 0.5
+        )
+    )
+RETURN
+    DIVIDE(ChurnedUsers, TotalUsers, 0) * 100
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+// Current Date
+Current Date = 
+TODAY()
+
+// Previous Month
+Previous Month = 
+DATEADD(TODAY(), -1, MONTH)
+
+// Year to Date
+YTD = 
+DATESYTD(dim_date[date_id])
+
+// Quarter to Date
+QTD = 
+DATESQTD(dim_date[date_id])
+
+// Month to Date
+MTD = 
+DATESMTD(dim_date[date_id])

@@ -70,7 +70,7 @@ chmod +x docker_helpers.sh
 | Service | Port | Description |
 |---------|------|-------------|
 | PostgreSQL | 5432 | Database server |
-| Kafka | 9092, 29092 | Message broker |
+| Kafka | 9092, 29092 | Message broker (`29092` for host apps, `9092` inside Docker) |
 | Zookeeper | 2181 | Kafka coordination |
 | Kafka UI | 8080 | Web UI for Kafka |
 
@@ -81,7 +81,7 @@ chmod +x docker_helpers.sh
   - User: streamflix
   - Password: streamflix123
   - Database: streamflix
-- **Kafka**: localhost:9092
+- **Kafka**: localhost:29092 from host Python apps; kafka:9092 from Docker services
 
 ## 📊 Kafka Topics
 

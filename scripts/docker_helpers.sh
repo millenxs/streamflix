@@ -31,7 +31,8 @@ start_services() {
     print_status "Services started successfully!"
     print_status "Kafka UI: http://localhost:8080"
     print_status "PostgreSQL: localhost:5432"
-    print_status "Kafka: localhost:9092"
+    print_status "Kafka from host apps: localhost:29092"
+    print_status "Kafka inside Docker network: kafka:9092"
 }
 
 # Stop all services

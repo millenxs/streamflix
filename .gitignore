@@ -35,9 +35,6 @@ ENV/
 env/
 .ENV/
 
-# Poetry
-poetry.lock
-
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints/

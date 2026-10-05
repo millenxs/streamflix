@@ -124,7 +124,8 @@ This document describes all tables in the StreamFlix database.
 
 **Notes**:
 - primary_genre_id is the main genre, additional genres in bridge table
-- duration_minutes is NULL for series (episodes have different durations)
+- duration_minutes is an estimated runtime for movies and an estimated average episode duration for synthetic series
+- rating_count and avg_rating are kept in processed catalog files for feature engineering; they are not persisted in dim_content yet
 - is_active can be set to FALSE for removed content
 
 ---

@@ -25,20 +25,27 @@ Output: CSV/JSON → data/processed/users/
 
 ### Step 1.2: Content Metadata Loading
 ```
-Python Script: src/ingestion/load_movielens.py, load_tmdb.py
+Python Script: src/ingestion/load_movielens.py
 ↓
-Input: MovieLens dataset, TMDB API
+Input: MovieLens ml-latest-small public dataset
 ↓
 Process: Load and normalize content:
   - Content ID
-  - Title
-  - Type (movie/series)
+  - Clean title
+  - Type (movie or deterministic synthetic series)
   - Release year
-  - Duration
-  - Genres
-  - Metadata (description, popularity)
+  - Estimated duration
+  - Genres and primary genre
+  - Rating count and average rating
+  - IMDb/TMDB public identifiers when available
+  - Portfolio-safe synthetic description
 ↓
-Output: CSV/JSON → data/processed/content/
+Output:
+  - data/processed/content/content_catalog.csv
+  - data/processed/content/content_catalog.parquet
+  - data/processed/content/content_genres.csv
+  - data/processed/content/content_genres.parquet
+  - PostgreSQL dim_content, dim_genre, dim_content_genre
 ```
 
 ### Step 1.3: Event Generation

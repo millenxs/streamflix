@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -77,20 +75,7 @@ services:
     networks:
       - streamflix-network
 
-  # PgAdmin (Optional - for database management)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: streamflix-pgadmin
-    depends_on:
-      - postgres
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@streamflix.local}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    networks:
-      - streamflix-network
+
 
 volumes:
   postgres_data:

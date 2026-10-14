@@ -223,15 +223,57 @@ python src/ingestion/load_movielens.py
 
 This command downloads MovieLens, builds an enriched StreamFlix catalog, creates deterministic synthetic series records, writes processed artifacts under `data/processed/content/`, and loads `dim_content`, `dim_genre`, and `dim_content_genre` in PostgreSQL.
 
-7. **Next implementation stages**
+7. **Generate users and simulate events**
+```bash
+python -m src.generation.users
+python -m src.generation.events --days 7 --users 100
+```
 
-The following commands will be added in upcoming stages and are intentionally not available yet:
-- event generation;
-- ETL/ELT execution;
-- model training;
-- FastAPI service startup.
+8. **Publish simulated events to Kafka**
+```bash
+# Preview generated events and topic routing without Kafka writes
+python -m src.streaming.producer --days 1 --users 10 --limit 20 --dry-run
 
-Current executable setup covers infrastructure, database initialization, and MovieLens content loading.
+# Publish to Kafka topics
+python -m src.streaming.producer --days 1 --users 10 --limit 1000 --events-per-second 100
+```
+
+9. **Persist Kafka events into the raw PostgreSQL layer**
+```bash
+# Consume only the canonical all-events topic to avoid duplicate raw ingestion
+python -m src.streaming.consumer --limit 1000 --idle-timeout 10
+```
+
+10. **Run raw-to-warehouse ETL/ELT**
+```bash
+python -m src.etl.pipeline
+```
+
+This command upserts device/location dimensions and populates `fact_recommendations`, `fact_watch_events`, `fact_sessions`, `fact_user_interactions`, and `fact_recommendation_feedback` idempotently from the raw layer.
+
+11. **Run data quality checks and create analytics views**
+```bash
+python -m src.analytics.quality
+python -m src.analytics.views
+python -m src.analytics.eda
+```
+
+The quality command verifies core raw and warehouse consistency rules. The views command creates dashboard-ready KPI views such as `vw_executive_kpis`, `vw_content_performance`, and `vw_recommendation_performance`. The EDA command exports view data to CSV for dashboard validation.
+
+12. **Build ML features and train models**
+```bash
+python -m src.features.user_features
+python -m src.ml.clustering.train
+python -m src.ml.churn.train
+python -m src.ml.recommendation.generate
+```
+
+13. **Serve recommendations and collect feedback**
+```bash
+uvicorn src.api.main:app --reload
+```
+
+Current executable setup covers infrastructure, database initialization, MovieLens content loading, user/event generation, Kafka event publishing, raw Kafka event persistence, raw-to-warehouse ETL/ELT, data quality checks, SQL analytics views, EDA exports, feature engineering, ML training, recommendation evaluation utilities, API serving, feedback capture, A/B testing, and thumbnail personalization.
 
 ### Running Tests
 ```bash
@@ -247,6 +289,8 @@ pytest
 - [Data Dictionary](docs/data_dictionary/tables.md)
 - [Technology Choices](docs/decisions/technology_choices.md)
 - [Power BI Setup](powerbi/README.md)
+- [Performance Optimization](docs/decisions/performance_optimization.md)
+- [Final Demonstration](docs/final_demo.md)
 
 ---
 
@@ -333,32 +377,33 @@ Event generation can be configured via environment variables:
 - [x] Docker + PostgreSQL + Kafka setup
 - [x] Content dataset integration (MovieLens loader)
 - [x] Database schema implementation (raw + dimensional base)
-- [ ] User and event generators
-- [ ] Kafka producer and consumer
-- [ ] Raw event layer
-- [ ] ETL/ELT pipeline
-- [ ] Data warehouse population
-- [ ] Data quality checks
-- [ ] SQL analytics views
-- [ ] Exploratory data analysis
-- [ ] KPI calculation
-- [ ] Power BI dashboards
-- [ ] Feature engineering
-- [ ] Taste clustering
-- [ ] Churn prediction model
-- [ ] Recommendation baseline
-- [ ] Content-based recommendation
-- [ ] Collaborative filtering
-- [ ] Hybrid recommendation
-- [ ] Recommendation evaluation
-- [ ] FastAPI implementation
-- [ ] Recommendation feedback loop
-- [ ] Thumbnail personalization
-- [ ] A/B testing
-- [ ] End-to-end tests
-- [ ] Performance optimization
-- [ ] Documentation
-- [ ] Final demonstration
+- [x] User and event generators
+- [x] Kafka producer
+- [x] Kafka consumer
+- [x] Raw event layer
+- [x] ETL/ELT pipeline
+- [x] Data warehouse population
+- [x] Data quality checks
+- [x] SQL analytics views
+- [x] Exploratory data analysis
+- [x] KPI calculation
+- [x] Power BI dashboards
+- [x] Feature engineering
+- [x] Taste clustering
+- [x] Churn prediction model
+- [x] Recommendation baseline
+- [x] Content-based recommendation
+- [x] Collaborative filtering
+- [x] Hybrid recommendation
+- [x] Recommendation evaluation
+- [x] FastAPI implementation
+- [x] Recommendation feedback loop
+- [x] Thumbnail personalization
+- [x] A/B testing
+- [x] End-to-end tests
+- [x] Performance optimization
+- [x] Documentation
+- [x] Final demonstration
 
 ---
 

@@ -79,16 +79,29 @@ Select the following tables and views for the initial dashboard:
 - fact_recommendation_feedback
 
 **Analytics Views** (after ETL):
-- vw_kpis
-- vw_content_analytics
-- vw_user_behavior
-- vw_retention
-- vw_churn
-- vw_recommendations
+- vw_executive_kpis
+- vw_daily_engagement
+- vw_content_performance
+- vw_device_usage
+- vw_recommendation_performance
+- vw_user_retention_churn
 
 ### Step 6: Load Data
 
 Click **Load** to import the data into Power BI.
+
+### Step 7: Refresh generated analytics views
+
+Before refreshing Power BI, run the project pipeline through analytics views:
+
+```powershell
+python -m src.etl.pipeline
+python -m src.analytics.quality
+python -m src.analytics.views
+python -m src.analytics.eda
+```
+
+The CSV exports under `data/processed/eda/` can be used to validate dashboard totals against Power BI visuals.
 
 ---
 

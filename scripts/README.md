@@ -172,6 +172,48 @@ docker compose down
 docker compose up -d
 ```
 
+## 🧪 Event generation and Kafka publishing
+
+Run these commands from the repository root after PostgreSQL and Kafka are healthy, topics exist, and the content catalog/users have been loaded:
+
+```powershell
+# Generate synthetic users
+python -m src.generation.users
+
+# Preview event generation without Kafka writes
+python -m src.streaming.producer --days 1 --users 10 --limit 20 --dry-run
+
+# Publish events to Kafka from the host machine
+python -m src.streaming.producer --days 1 --users 10 --limit 1000 --events-per-second 100
+
+# Persist canonical events into PostgreSQL raw tables
+python -m src.streaming.consumer --limit 1000 --idle-timeout 10
+
+# Populate warehouse fact tables from the raw layer
+python -m src.etl.pipeline
+
+# Validate raw/warehouse consistency
+python -m src.analytics.quality
+
+# Create dashboard-ready analytics views and EDA exports
+python -m src.analytics.views
+python -m src.analytics.eda
+
+# Build features and train ML models
+python -m src.features.user_features
+python -m src.ml.clustering.train
+python -m src.ml.churn.train
+python -m src.ml.recommendation.generate
+
+# Serve recommendations and feedback API
+uvicorn src.api.main:app --reload
+```
+
+The producer writes every event to `streamflix.events` and duplicates domain-specific events to `streamflix.playback`, `streamflix.interactions`, or `streamflix.recommendations`.
+The consumer reads `streamflix.events` by default, inserts idempotently into `raw_events`, and materializes playback events into `raw_playback_events`.
+The ETL pipeline upserts device/location dimensions and idempotently populates recommendation, watch, session, interaction, and recommendation-feedback facts.
+The quality checks validate key raw/warehouse consistency rules, analytics views expose dashboard-ready KPI datasets, and ML/API commands cover recommendation serving, feedback, A/B assignment, and thumbnail personalization.
+
 ## 📝 Notes
 
 - Services are configured in `docker-compose.yml`

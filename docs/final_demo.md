@@ -17,13 +17,15 @@ python -m src.ml.clustering.train
 python -m src.ml.churn.train
 python -m src.ml.recommendation.generate
 uvicorn src.api.main:app --reload
+streamlit run app/streamlit_app.py
 ```
 
-Then open:
+Run the API and Streamlit commands in separate terminals. Then open:
 
 - Recommendation API: `http://localhost:8000/recommendations/1`
 - API health: `http://localhost:8000/health`
+- Streamlit demo: `http://localhost:8501`
 - Kafka UI: `http://localhost:8080`
-- Power BI: connect to PostgreSQL and import the `vw_*` analytics views.
+- Power BI preparation: connect to PostgreSQL and import the `vw_*` analytics views. The repository includes setup guidance and starter DAX measures, but no completed `.pbix` report.
 
-The demo covers ingestion, raw persistence, ETL, quality checks, analytics views, feature engineering, ML training, recommendation serving, feedback capture, A/B assignment, and thumbnail personalization.
+The demo covers ingestion, raw persistence, ETL, quality checks, analytics views, feature engineering, ML training, recommendation serving, in-memory API feedback capture, A/B assignment, and thumbnail variant assignment. TMDB metadata enrichment is optional and requires TMDB access to be configured.

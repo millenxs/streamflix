@@ -2,20 +2,20 @@
 
 ## 📐 System Architecture
 
-StreamFlix is designed as a modular, scalable data platform that simulates a real-world streaming analytics and recommendation system.
+StreamFlix is a modular, local-scale educational platform that simulates a streaming analytics and recommendation system. Its components illustrate common architectural patterns but have not been benchmarked for production-scale throughput.
 
 ## 🏛️ Architectural Principles
 
 1. **Separation of Concerns**: Each layer has a distinct responsibility (generation, streaming, storage, transformation, analytics, ML, serving)
 2. **Idempotency**: All operations can be safely retried without side effects
 3. **Observability**: Structured logging and metrics throughout the pipeline
-4. **Scalability**: Architecture can scale from 10k to 1M+ events
+4. **Scalability**: The modular design leaves room for future scaling; the current single-machine demo is not a validated production-scale deployment
 5. **Modularity**: Components can be developed, tested, and deployed independently
 
 ## 🔄 Data Flow Architecture
 
 ### 1. Event Generation Layer
-**Purpose**: Simulate realistic user behavior at scale
+**Purpose**: Generate configurable synthetic user behavior for bounded local demonstrations
 
 **Components**:
 - User Simulator: Creates synthetic user profiles with behavioral patterns
@@ -152,7 +152,7 @@ StreamFlix is designed as a modular, scalable data platform that simulates a rea
 - Churn Rate
 - Engagement Rate
 
-**Output**: Power BI dashboards, CSV exports, API endpoints
+**Output**: Power BI-ready SQL views, CSV exports, API endpoints
 
 ### 7. Machine Learning Layer
 **Purpose**: Predictive modeling and personalization
@@ -267,11 +267,11 @@ StreamFlix is designed as a modular, scalable data platform that simulates a rea
 ## 📊 Scalability Considerations
 
 ### Current Scope (Local Development)
-- 10k-100k users
-- 100k-1M events
+- Bounded synthetic workloads; the documented demo uses 50 users and a limit of 5,000 events
 - Single machine
 - PostgreSQL without partitioning
 - Kafka with single broker
+- No throughput or million-event capacity benchmark has been performed
 
 ### Production Considerations (Future)
 - Horizontal scaling: Multiple Kafka brokers, consumer groups
@@ -314,7 +314,7 @@ StreamFlix is designed as a modular, scalable data platform that simulates a rea
 5. Streaming (producer, consumer)
 6. ETL pipeline
 7. Analytics (SQL views, KPIs)
-8. BI (Power BI dashboards)
+8. BI (Power BI-ready SQL views; create the report in Power BI Desktop)
 9. Feature engineering
 10. ML models (clustering, churn, recommendations)
 11. API (FastAPI)

@@ -19,6 +19,8 @@ def test_recommendations_endpoint_returns_items() -> None:
     payload = response.json()
     assert payload["user_id"] == 1
     assert len(payload["recommendations"]) == 2
+    assert "title" in payload["recommendations"][0]
+    assert "primary_genre" in payload["recommendations"][0]
 
 
 def test_feedback_endpoint_accepts_payload() -> None:

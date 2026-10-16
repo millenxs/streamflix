@@ -6,15 +6,19 @@
 ![PowerBI](https://img.shields.io/badge/PowerBI-F2C811)
 ![MachineLearning](https://img.shields.io/badge/MachineLearning-Scikit--learn-F7931E)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688)
+![Streamlit](https://img.shields.io/badge/Streamlit-demo-FF4B4B)
+![TMDB](https://img.shields.io/badge/Catalog-TMDB-01B4E4)
 ![Docker](https://img.shields.io/badge/Docker-2496ED)
 
 ---
 
 ## 📖 Overview
 
-StreamFlix is a comprehensive data platform that simulates how a streaming company collects millions of behavioral events, processes them in real-time, stores and transforms data, performs business analytics, creates BI dashboards, and uses Machine Learning for user segmentation and content recommendation.
+StreamFlix is an educational, local-scale simulation of a data platform for a streaming service. It generates synthetic behavioral events, processes them through Kafka and PostgreSQL, transforms them into an analytical warehouse, and uses machine learning to segment users and generate recommendations. The MovieLens catalog is optionally enriched with metadata and artwork from TMDB, and recommendations can be explored through a Streamlit demo.
 
-This project demonstrates a complete end-to-end data architecture, suitable for portfolio presentation for roles in:
+The repository includes Power BI-ready SQL views and starter DAX measures; a finished Power BI report (`.pbix`) is not included. The project is intended to demonstrate end-to-end concepts at local educational scale, not production capacity.
+
+This project demonstrates an end-to-end workflow relevant to:
 - Data Analyst
 - BI Analyst
 - Data Engineer
@@ -52,15 +56,13 @@ User Simulator → Event Generator → Kafka Producer → Kafka Topics
                                                           ↓
                                               ┌─────────┴─────────┐
                                               ↓                   ↓
-                                      Power BI Dashboards   Machine Learning
+                                   Power BI-ready SQL views  Machine Learning
                                               ↓                   ↓
-                                    Business Insights   Recommendation Engine
-                                              ↓                   ↓
-                                              └─────────┬─────────┘
-                                                        ↓
-                                              FastAPI (Recommendation Service)
-                                                        ↓
-                                              Feedback Events → Kafka
+                                     Power BI (manual setup)  Recommendation Engine
+                                                                  ↓
+                                                    FastAPI Recommendation Service
+                                                       ↑          ↓
+                                         Optional TMDB API   Streamlit Demo UI
 ```
 
 ### Tech Stack
@@ -73,7 +75,9 @@ User Simulator → Event Generator → Kafka Producer → Kafka Topics
 | Streaming | Apache Kafka-compatible broker via Confluent Platform 7.5.0 |
 | Machine Learning | Scikit-learn |
 | API | FastAPI, Pydantic, Uvicorn |
-| BI | Power BI (Tableau-compatible) |
+| Demo UI | Streamlit |
+| Catalog enrichment | TMDB API (optional; MovieLens remains the base catalog) |
+| BI preparation | PostgreSQL analytics views, DAX starter measures; Power BI report not included |
 | Infrastructure | Docker, Docker Compose |
 | Testing | Pytest |
 | Package Management | pip + pyproject.toml |
@@ -82,18 +86,18 @@ User Simulator → Event Generator → Kafka Producer → Kafka Topics
 
 ## 📊 Data Flow
 
-1. **Event Generation**: Python simulates thousands/millions of user interactions (login, play, pause, complete, search, recommendation clicks)
-2. **Streaming Ingestion**: Events are sent to Kafka topics and consumed by Python consumers
+1. **Event Generation**: Python generates configurable synthetic user interactions for bounded local runs (login, play, pause, complete, search, recommendation clicks)
+2. **Streaming Ingestion**: Simulated events are sent to Kafka topics and consumed by Python consumers
 3. **Raw Storage**: Events are stored in PostgreSQL raw layer
 4. **ETL/ELT**: Python pipeline validates, cleans, and transforms data into dimensional model
 5. **Data Warehouse**: Star schema with fact tables (watch events, sessions, interactions, recommendations) and dimensions (users, content, genre, device, location, date)
-6. **Analytics**: SQL views serve Power BI dashboards for business KPIs
+6. **Analytics**: SQL views provide business KPIs and are ready to connect to Power BI
 7. **Machine Learning**:
    - Taste Clustering (K-Means) for user segmentation
    - Churn Prediction (Logistic Regression, Random Forest)
    - Recommendation Engine (Popularity, Content-Based, Collaborative, Hybrid)
-8. **API**: FastAPI serves recommendations and analytics
-9. **Feedback Loop**: User interactions with recommendations return to Kafka for continuous improvement
+8. **API**: FastAPI serves recommendations enriched with warehouse metadata and, when configured and available, TMDB metadata
+9. **Demo and Feedback**: Streamlit presents recommendations and can submit feedback to the API; feedback capture is currently in memory and is not yet persisted to Kafka or PostgreSQL
 
 ---
 
@@ -124,13 +128,16 @@ User Simulator → Event Generator → Kafka Producer → Kafka Topics
 
 ## 📈 Key Features
 
-### Business Intelligence (Power BI)
-- **Executive Overview**: MAU, Watch Time, Retention, Churn, Completion Rate, Recommendation CTR
-- **Content Analytics**: Most watched titles, genres, completion, abandonment
-- **User Behavior**: Peak hours, devices, sessions, frequency
-- **Retention & Churn**: Cohort analysis, retention curves, churn patterns
-- **Recommendation Performance**: Impressions, clicks, CTR, conversion
-- **Taste Clusters**: Cluster size, genres, behavior, watch time
+### BI Preparation (Power BI)
+- PostgreSQL views expose business KPIs for Power BI.
+- Starter DAX measures and a connection guide are included.
+- Building and validating the interactive report in Power BI Desktop remains a follow-up task; no `.pbix` is included.
+
+### Recommendation Demo (Streamlit + TMDB)
+- Streamlit provides a local, interactive home-style view of personalized recommendations.
+- Recommendation cards show warehouse metadata and can display TMDB posters, synopsis, rating, and links when matching metadata and TMDB access are available.
+- The MovieLens dataset remains the base catalog; TMDB is an optional enrichment source.
+- Feedback buttons demonstrate API feedback capture; feedback is currently in memory and does not automatically update recommendation training data.
 
 ### Machine Learning
 - **Taste Clustering**: User segmentation based on behavior (K-Means + PCA)
@@ -273,7 +280,12 @@ python -m src.ml.recommendation.generate
 uvicorn src.api.main:app --reload
 ```
 
-Current executable setup covers infrastructure, database initialization, MovieLens content loading, user/event generation, Kafka event publishing, raw Kafka event persistence, raw-to-warehouse ETL/ELT, data quality checks, SQL analytics views, EDA exports, feature engineering, ML training, recommendation evaluation utilities, API serving, feedback capture, A/B testing, and thumbnail personalization.
+14. **Run the Streamlit product demo**
+```bash
+streamlit run app/streamlit_app.py
+```
+
+Current executable setup covers infrastructure, database initialization, MovieLens content loading, synthetic user/event generation, Kafka event publishing, raw Kafka event persistence, raw-to-warehouse ETL/ELT, data quality checks, SQL analytics views, EDA exports, feature engineering, ML training, recommendation evaluation utilities, API serving, Streamlit demo UI, in-memory feedback capture, A/B testing, and thumbnail variant assignment. TMDB metadata enrichment is optional. A Power BI report is not included.
 
 ### Running Tests
 ```bash
@@ -300,7 +312,7 @@ This project demonstrates:
 
 ### For Data Analyst / BI Analyst
 - Translating business questions into SQL queries
-- Creating interactive Power BI dashboards
+- Preparing dashboard-ready SQL views and DAX measures for Power BI; the interactive report itself remains to be built
 - Defining KPIs with mathematical formulas
 - Structured exploratory analysis
 - Dimensional modeling (Star Schema)
@@ -341,15 +353,14 @@ This project demonstrates:
 
 ---
 
-## 📊 Business Impact & Insights
+## 📊 Analysis Opportunities
 
-This platform enables:
+With the synthetic dataset, the platform can be used to explore:
 - **Data-driven content decisions**: Identify high-performing genres and titles
 - **User retention optimization**: Understand churn patterns and intervene
-- **Personalization at scale**: Recommend content based on taste communities
-- **Real-time monitoring**: Track KPIs and system health
+- **Personalized recommendations**: Recommend content based on simulated user behavior
+- **Operational monitoring**: Track local pipeline and API health
 - **Experimentation**: A/B test recommendation algorithms
-- **Scalable architecture**: Configurable from 10k to 1M+ events
 
 ---
 
@@ -357,7 +368,7 @@ This platform enables:
 
 **This project is an independent educational simulation inspired by large-scale streaming data architectures. It is not affiliated with Netflix, Disney+, or any streaming service.**
 
-All user data is synthetic and anonymized. No personal information is used or stored.
+All user and behavioral data is synthetic. The documented demo uses bounded local workloads; throughput and million-event capacity have not been benchmarked or validated.
 
 ---
 
@@ -387,7 +398,7 @@ Event generation can be configured via environment variables:
 - [x] SQL analytics views
 - [x] Exploratory data analysis
 - [x] KPI calculation
-- [x] Power BI dashboards
+- [ ] Power BI dashboard report (`.pbix`) — SQL views, starter DAX measures, and connection guide are available
 - [x] Feature engineering
 - [x] Taste clustering
 - [x] Churn prediction model
@@ -403,7 +414,7 @@ Event generation can be configured via environment variables:
 - [x] End-to-end tests
 - [x] Performance optimization
 - [x] Documentation
-- [x] Final demonstration
+- [x] Local end-to-end demonstration guide
 
 ---
 
@@ -423,7 +434,7 @@ MIT License
 
 Millenxs
 
-**Senior Data Engineer | Data Scientist | Machine Learning Engineer**
+Project focus: Data Engineering, Analytics & Machine Learning
 
 ---
 

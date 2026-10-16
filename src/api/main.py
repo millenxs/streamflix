@@ -12,6 +12,7 @@ from fastapi import FastAPI
 
 from src.api.models.recommendations import RecommendationFeedback, RecommendationItem, RecommendationResponse
 from src.api.thumbnail import choose_thumbnail_variant
+from src.api.tmdb import fetch_tmdb_metadata
 from src.experiments.ab_testing import assign_variant
 from src.generation.events import DatabaseSettings
 from src.ml.recommendation.baseline import recommend_popular
@@ -30,10 +31,16 @@ FEEDBACK_EVENTS: list[dict[str, int | str | None]] = []
 
 WAREHOUSE_RECOMMENDATION_SQL = """
 SELECT
+    recommendation.recommendation_id::text,
     recommendation.content_id,
     recommendation.score,
     recommendation.algorithm,
-    genre.genre_name AS primary_genre
+    content.title,
+    content.content_type,
+    content.release_year,
+    genre.genre_name AS primary_genre,
+    content.tmdb_id,
+    content.description
 FROM fact_recommendations recommendation
 JOIN dim_content content ON content.content_id = recommendation.content_id
 LEFT JOIN dim_genre genre ON genre.genre_id = content.primary_genre_id
@@ -44,11 +51,17 @@ LIMIT %s
 
 POPULAR_CONTENT_SQL = """
 SELECT
-    content_id,
-    COALESCE(watch_time_hours, 0.0) AS score,
-    primary_genre
-FROM vw_content_performance
-ORDER BY watch_time_hours DESC NULLS LAST, plays DESC NULLS LAST, content_id
+    view.content_id,
+    COALESCE(view.watch_time_hours, 0.0) AS score,
+    view.primary_genre,
+    view.title,
+    view.content_type,
+    content.release_year,
+    content.tmdb_id,
+    content.description
+FROM vw_content_performance view
+JOIN dim_content content ON content.content_id = view.content_id
+ORDER BY view.watch_time_hours DESC NULLS LAST, view.plays DESC NULLS LAST, view.content_id
 LIMIT %s
 """
 
@@ -69,6 +82,41 @@ def _database_connection() -> psycopg2.extensions.connection:
     return psycopg2.connect(**settings)
 
 
+def _recommendation_item(
+    *,
+    content_id: int,
+    score: object,
+    algorithm: str,
+    variant: str,
+    title: str | None,
+    content_type: str | None,
+    release_year: int | None,
+    primary_genre: str | None,
+    tmdb_id: int | None,
+    description: str | None,
+    recommendation_id: str | None = None,
+) -> RecommendationItem:
+    """Build a recommendation item enriched with warehouse and TMDB metadata."""
+    tmdb = fetch_tmdb_metadata(tmdb_id, content_type)
+    return RecommendationItem(
+        recommendation_id=recommendation_id,
+        content_id=int(content_id),
+        score=_float(score, 0.0),
+        algorithm=algorithm,
+        title=title,
+        content_type=content_type,
+        release_year=release_year,
+        primary_genre=primary_genre,
+        overview=tmdb.get("overview") or description,
+        poster_url=tmdb.get("poster_url"),
+        backdrop_url=tmdb.get("backdrop_url"),
+        vote_average=_float(tmdb.get("vote_average"), 0.0) if tmdb.get("vote_average") is not None else None,
+        tmdb_popularity=_float(tmdb.get("tmdb_popularity"), 0.0) if tmdb.get("tmdb_popularity") is not None else None,
+        tmdb_url=tmdb.get("tmdb_url"),
+        thumbnail_variant=choose_thumbnail_variant(primary_genre, variant),
+    )
+
+
 def _warehouse_items(user_id: int, limit: int, variant: str) -> list[RecommendationItem]:
     """Load user-specific recommendations from fact_recommendations."""
     with _database_connection() as connection:
@@ -77,13 +125,20 @@ def _warehouse_items(user_id: int, limit: int, variant: str) -> list[Recommendat
             rows = cursor.fetchall()
 
     return [
-        RecommendationItem(
+        _recommendation_item(
+            recommendation_id=str(recommendation_id),
             content_id=int(content_id),
-            score=_float(score),
+            score=score,
             algorithm=str(algorithm),
-            thumbnail_variant=choose_thumbnail_variant(primary_genre, variant),
+            variant=variant,
+            title=str(title),
+            content_type=str(content_type),
+            release_year=int(release_year) if release_year is not None else None,
+            primary_genre=str(primary_genre) if primary_genre is not None else None,
+            tmdb_id=int(tmdb_id) if tmdb_id is not None else None,
+            description=str(description) if description is not None else None,
         )
-        for content_id, score, algorithm, primary_genre in rows
+        for recommendation_id, content_id, score, algorithm, title, content_type, release_year, primary_genre, tmdb_id, description in rows
     ]
 
 
@@ -95,13 +150,19 @@ def _popular_items(limit: int, variant: str) -> list[RecommendationItem]:
             rows = cursor.fetchall()
 
     return [
-        RecommendationItem(
+        _recommendation_item(
             content_id=int(content_id),
-            score=_float(score, 0.0),
+            score=score,
             algorithm="warehouse_popularity",
-            thumbnail_variant=choose_thumbnail_variant(primary_genre, variant),
+            variant=variant,
+            title=str(title),
+            content_type=str(content_type),
+            release_year=int(release_year) if release_year is not None else None,
+            primary_genre=str(primary_genre) if primary_genre is not None else None,
+            tmdb_id=int(tmdb_id) if tmdb_id is not None else None,
+            description=str(description) if description is not None else None,
         )
-        for content_id, score, primary_genre in rows
+        for content_id, score, primary_genre, title, content_type, release_year, tmdb_id, description in rows
     ]
 
 
@@ -113,6 +174,9 @@ def _sample_items(limit: int, variant: str) -> list[RecommendationItem]:
             content_id=content_id,
             score=1 / rank,
             algorithm="popularity_fallback",
+            title=f"Demo title {content_id}",
+            content_type="movie",
+            primary_genre=None,
             thumbnail_variant=choose_thumbnail_variant(None, variant),
         )
         for rank, content_id in enumerate(content_ids, start=1)

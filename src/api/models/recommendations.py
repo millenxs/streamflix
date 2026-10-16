@@ -12,6 +12,17 @@ class RecommendationItem(BaseModel):
     score: float = 1.0
     algorithm: str = "hybrid"
     thumbnail_variant: str = "default"
+    recommendation_id: str | None = None
+    title: str | None = None
+    content_type: str | None = None
+    release_year: int | None = None
+    primary_genre: str | None = None
+    overview: str | None = None
+    poster_url: str | None = None
+    backdrop_url: str | None = None
+    vote_average: float | None = None
+    tmdb_popularity: float | None = None
+    tmdb_url: str | None = None
 
 
 class RecommendationResponse(BaseModel):

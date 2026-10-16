@@ -207,6 +207,9 @@ python -m src.ml.recommendation.generate
 
 # Serve recommendations and feedback API
 uvicorn src.api.main:app --reload
+
+# Run interactive product demo
+streamlit run app/streamlit_app.py
 ```
 
 The producer writes every event to `streamflix.events` and duplicates domain-specific events to `streamflix.playback`, `streamflix.interactions`, or `streamflix.recommendations`.
